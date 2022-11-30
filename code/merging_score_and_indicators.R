@@ -1,0 +1,23 @@
+
+require(haven)
+require(stargazer)
+require(ivreg)
+require(plm)
+require(sandwich)
+require(lmtest)    
+require(dplyr)
+require(questionr)
+require(ggplot2)
+library(tidyverse) 
+library(backports)
+library(broom)
+library(car)
+library(zoo)
+library(lmtest)
+library(foreign)
+library(readxl)
+
+
+load("C:/Users/kaleb/OneDrive/Documents/prepped_indicators_gemeente.RData")
+view(prepped_indicators_gemeente)
+prepped_indicators_gemeente <- as.data.frame(`prepped_indicators_gemeente.RData`)

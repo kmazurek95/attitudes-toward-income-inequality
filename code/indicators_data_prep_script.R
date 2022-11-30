@@ -152,6 +152,15 @@ names(indicators_gemeente)[23] <- "gemeente_code_four_digits"
 
 
 
+#SAVE THE THREE LEVELS OF INDICATORS TO STATA and R DATA FORMATS
+
+#save to rda file
+save(indicators_gemeente, file = "prepped_indicators_gemeente.RData")
+write.dta(indicators_gemeente, "C:/Users/kaleb/OneDrive/Documents/prepped_indicators_gemeente.dta")
+write.csv(indicators_gemeente,"C:/Users/kaleb/OneDrive/Documents/prepped_indicators_gemeente.csv")
+
+
+
 #WTITE A LINE OF CODE THAT INTRODUCES THE SCORE DATA SET FOR MERGING IN CASE IT IS NOT ALWAYS IN THE WORKING ENVIRONMENT 
 
 merged_score_with__buurt_indicators_only <- merge(x = score_final, y = indicators_buurt, by = "buurt_code_eight_digits")
