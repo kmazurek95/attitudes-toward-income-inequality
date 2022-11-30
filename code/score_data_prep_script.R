@@ -47,60 +47,55 @@ score <- read_dta("C:/Users/kaleb/OneDrive/Documents/score.dta")
 
 #-------------------------------------------
 #------------------NEXT STEPS---------------
-# (1) change the labels  (3) drop NA's
+# (1) change the labels ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  (3) drop NA's
 # (4) figure out which observations are being dropped and why (5) Try Merging in STATA in order to see which observations are not merging
 
 
 #------------------------------------------------------------------------------
 
-score1000 <- score[score$Buurtcode > 1000 & score$Buurtcode < 10000,] #these have four digits but all are NA 
+score_four_digit_buurtcodes <- score[score$Buurtcode > 1000 & score$Buurtcode < 10000,] #these have four digits but all are NA 
 
 #------------------------------------------------------------------------------
 
-score10000 <- score[score$Buurtcode > 10000 & score$Buurtcode < 100000,] #these have five digits
-score10000$buurt_code_eight_digits <- paste0("000", score10000$Buurtcode) #put three zeros in front of the code in order for it to be eight digits (buurtcode)
+score_five_digit_buurtcodes <- score[score$Buurtcode > 10000 & score$Buurtcode < 100000,] #these have five digits
+score_five_digit_buurtcodes$buurt_code_eight_digits <- paste0("000", score_five_digit_buurtcodes$Buurtcode) #put three zeros in front of the code in order for it to be eight digits (buurtcode)
 
-score10000$wijk_code_six_digits <- substr(score10000$buurt_code_eight_digits,1,nchar(score10000$buurt_code_eight_digits)-2)
-score10000$gemeente_code_four_digits <- substr(score10000$buurt_code_eight_digits,1,nchar(score10000$buurt_code_eight_digits)-4)
+score_five_digit_buurtcodes$wijk_code_six_digits <- substr(score_five_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_five_digit_buurtcodes$buurt_code_eight_digits)-2)
+score_five_digit_buurtcodes$gemeente_code_four_digits <- substr(score_five_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_five_digit_buurtcodes$buurt_code_eight_digits)-4)
 
 #------------------------------------------------------------------------------
 #SIX DIGITS
 
-score100000 <- score[score$Buurtcode > 100000 & score$Buurtcode < 1000000,] #these have six digits
-score100000$buurt_code_eight_digits <- paste0("00", score100000$Buurtcode) #put two zeros in front of the code in order for it to be eight digits (buurtcode)
+score_six_digit_buurtcodes <- score[score$Buurtcode > 100000 & score$Buurtcode < 1000000,] #these have six digits
+score_six_digit_buurtcodes$buurt_code_eight_digits <- paste0("00", score_six_digit_buurtcodes$Buurtcode) #put two zeros in front of the code in order for it to be eight digits (buurtcode)
 
-score100000$wijk_code_six_digits <- substr(score100000$buurt_code_eight_digits,1,nchar(score100000$buurt_code_eight_digits)-2)
-score100000$gemeente_code_four_digits <- substr(score100000$buurt_code_eight_digits,1,nchar(score100000$buurt_code_eight_digits)-4)
+score_six_digit_buurtcodes$wijk_code_six_digits <- substr(score_six_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_six_digit_buurtcodes$buurt_code_eight_digits)-2)
+score_six_digit_buurtcodes$gemeente_code_four_digits <- substr(score_six_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_six_digit_buurtcodes$buurt_code_eight_digits)-4)
 
 
 #------------------------------------------------------------------------------
 #SEVEN DIGITS
 
-score1000000 <- score[score$Buurtcode > 1000000 & score$Buurtcode < 10000000,] #these have seven digits
-score1000000$buurt_code_eight_digits <- paste0("0", score1000000$Buurtcode) #put one zero in front of the code in order for it to be eight digits (buurtcode)
+score_seven_digit_buurtcodes <- score[score$Buurtcode > 1000000 & score$Buurtcode < 10000000,] #these have seven digits
+score_seven_digit_buurtcodes$buurt_code_eight_digits <- paste0("0", score_seven_digit_buurtcodes$Buurtcode) #put one zero in front of the code in order for it to be eight digits (buurtcode)
 
-score1000000$wijk_code_six_digits <- substr(score1000000$buurt_code_eight_digits,1,nchar(score1000000$buurt_code_eight_digits)-2)
-score1000000$gemeente_code_four_digits <- substr(score1000000$buurt_code_eight_digits,1,nchar(score1000000$buurt_code_eight_digits)-4)
+score_seven_digit_buurtcodes$wijk_code_six_digits <- substr(score_seven_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_seven_digit_buurtcodes$buurt_code_eight_digits)-2)
+score_seven_digit_buurtcodes$gemeente_code_four_digits <- substr(score_seven_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_seven_digit_buurtcodes$buurt_code_eight_digits)-4)
 
 
 #-----------------------------------------------------------------------------------------------------
 #EIGHT DIGITS
 
-score10000000 <- score[score$Buurtcode > 10000000 & score$Buurtcode < 100000000,] #eight digits and fine the way they are
-score10000000$buurt_code_eight_digits <- paste0("", score10000000$Buurtcode) #put one zero in front of the code in order for it to be eight digits (buurtcode)
+score_eight_digit_buurtcodes <- score[score$Buurtcode > 10000000 & score$Buurtcode < 100000000,] #eight digits and fine the way they are
+score_eight_digit_buurtcodes$buurt_code_eight_digits <- paste0("", score_eight_digit_buurtcodes$Buurtcode) #put one zero in front of the code in order for it to be eight digits (buurtcode)
 
-score10000000$wijk_code_six_digits <- substr(score10000000$buurt_code_eight_digits,1,nchar(score10000000$buurt_code_eight_digits)-2)
-score10000000$gemeente_code_four_digits <- substr(score10000000$buurt_code_eight_digits,1,nchar(score10000000$buurt_code_eight_digits)-4)
+score_eight_digit_buurtcodes$wijk_code_six_digits <- substr(score_eight_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_eight_digit_buurtcodes$buurt_code_eight_digits)-2)
+score_eight_digit_buurtcodes$gemeente_code_four_digits <- substr(score_eight_digit_buurtcodes$buurt_code_eight_digits,1,nchar(score_eight_digit_buurtcodes$buurt_code_eight_digits)-4)
 
-
-
-#------------------------------------------------------------------------------------------------------
-
-score100000000 <- score[score$Buurtcode > 100000000 & score$Buurtcode < 1000000000,] #no values
 
 #------------------------------------------------------------------------------------------------------
 
-total <- rbind(score10000, score100000, score1000000, score10000000) #why is the total more? (because of NAs)
+total <- rbind(score_five_digit_buurtcodes, score_six_digit_buurtcodes, score_seven_digit_buurtcodes, score_eight_digit_buurtcodes) #why is the total more? (because of NAs)
 
 
 keeps <- c("a27_1","a27_2", "a27_3", "b01", "b02", "b03", "b04", "b05", "b06", "b07", "b08", "b09",
@@ -150,9 +145,14 @@ names(score_final)[34] <- "wijk_code_six_digits"
 names(score_final)[35] <- "gemeente_code_four_digits"
 names(score_final)[36] <- "respondent_number"
 
+describe(score_final)
 
+#SAVE THE PREPARED SCORE DATA IN THREE FORMATS 
 
-hist(score_final$a27_1_government_intervention_into_the_economy)
+save(score_final, file = "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_score_data/score_prepped.RData")
 
+#ERROR FOR STATA FILE: "Error in write.dta  empty string is not valid in Stata's documented format"
+#write.dta(score_final, "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_score_data/score_prepped.dta")
 
+write.csv(score_final,"C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_score_data/score_prepped.csv")
 
