@@ -40,4 +40,5 @@ vignettes/*.pdf
 
 
 raw_data/
-processed_score/
+
+processed_score_data/
