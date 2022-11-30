@@ -152,16 +152,27 @@ names(indicators_gemeente)[23] <- "gemeente_code_four_digits"
 
 
 
-#WTITE A LINE OF CODE THAT INTRODUCES THE SCORE DATA SET FOR MERGING IN CASE IT IS NOT ALWAYS IN THE WORKING ENVIRONMENT 
+#SAVE THE THREE LEVELS OF INDICATORS TO STATA, CSV, &  R DATA FORMATS
 
-merged_score_with__buurt_indicators_only <- merge(x = score_final, y = indicators_buurt, by = "buurt_code_eight_digits")
-merged_score_with_wijk_indicators_only <- merge(x = score_final, y = indicators_wijk, by= "wijk_code_six_digits") #merged wijk indicators with original data set 
-merged_score_with_gemeente_indicators_only <- merge(x = score_final, y = indicators_gemeente, by= "gemeente_code_four_digits") #merged wijk indicators with original data set 
+#BUURT INDICATORS
+save(indicators_buurt, file = "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_buurt.RData")
+write.dta(indicators_buurt, "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_buurt.dta")
+write.csv(indicators_buurt,"C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_buurt.csv")
 
 
-#MERGE WIJK INDICATORS WITH WITH BUURT INDICATORS AND SCORE DATA 
-INCOMPLETE_merged_score_with_buurt_and_wijk_indicators <- merge(x = merged_score_with__buurt_indicators_only, y = indicators_wijk, by= "wijk_code_six_digits") #merge wijk indicators with the previous merge between score and buurt indicators
+#WIJK INDICATORS
 
-#MERGE GEMEENTE INDICATORS WITH WITH BUURT AND WIJK INDICATORS AND SCORE DATA 
-COMPLETE_merged_score_with_buurt_wijk_and_gementeee_indicators <- merge(x = INCOMPLETE_merged_score_with_buurt_and_wijk_indicators, y = indicators_gemeente, by= "gemeente_code_four_digits") #merge wijk indicators with the previous merge between score and buurt indicators
+save(indicators_wijk, file = "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_wijk.RData")
+write.dta(indicators_wijk, "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_wijk.dta")
+write.csv(indicators_wijk,"C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_wijk.csv")
+
+
+#GEMEENTE INDICATORS
+save(indicators_gemeente, file = "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_gemeente.RData")
+write.dta(indicators_gemeente, "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_gemeente.dta")
+write.csv(indicators_gemeente,"C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_indicators/prepped_indicators_gemeente.csv")
+
+
+
+
 
