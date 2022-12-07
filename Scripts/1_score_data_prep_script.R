@@ -15,20 +15,19 @@ library(zoo)
 library(lmtest)
 library(foreign)
 
-install.packages(expss)
 #------------------------------------------------------------------------------
-#rm(list=ls())
+rm(list=ls())
 
-setwd("C:/Users/kaleb/OneDrive/Documents")
+score <- read_dta("./Data/score.dta")
 
-score <- read_dta("C:/Users/kaleb/OneDrive/Documents/score.dta")
+score <- as.data.frame(`score`)
 
 # write.csv(score,"C:/Users/kaleb/OneDrive/Documents/score.csv", row.names = FALSE), examine in excel 
 
 
 #------------------------------------------------------------------------------
 
-#CORRECT BUURTCODES SO INDICATORS CAN BE MERGED ON BEERT, WIJK, and GEMEENTE 
+#CORRECT BUURTCODES SO INDICATORS CAN BE MERGED ON BUURT, WIJK, and GEMEENTE 
 
 
 
@@ -40,22 +39,17 @@ score <- read_dta("C:/Users/kaleb/OneDrive/Documents/score.dta")
 # gemeente code. Once all leading zeros are added and wijk and gemeente codes are generated, we add four sub data frames back together to re-create a complete dataset with
 # all observations.
 
-#Buurtcode = Gemeentecode (4) + wijkcode (2) + buurtcode (2)
+#Buurtcode (8 digits) = Gemeentecode (4 digits) + wijkcode (2 Digits) + buurtcode (2 Digits)
 
-#https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2021/toelichting-wijk-en-buurtkaart-2021?onepage=true 
-
-
-#-------------------------------------------
-#------------------NEXT STEPS---------------
-# (1) change the labels ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  (3) drop NA's
-# (4) figure out which observations are being dropped and why (5) Try Merging in STATA in order to see which observations are not merging
-
+# WEBSITE THAT EXPLAINS THE INDICATOR LEVELS: https://www.cbs.nl/nl-nl/longread/aanvullende-statistische-diensten/2021/toelichting-wijk-en-buurtkaart-2021?onepage=true 
 
 #------------------------------------------------------------------------------
+#Four Digits
 
 score_four_digit_buurtcodes <- score[score$Buurtcode > 1000 & score$Buurtcode < 10000,] #these have four digits but all are NA 
 
 #------------------------------------------------------------------------------
+# FIVE DIGITS 
 
 score_five_digit_buurtcodes <- score[score$Buurtcode > 10000 & score$Buurtcode < 100000,] #these have five digits
 score_five_digit_buurtcodes$buurt_code_eight_digits <- paste0("000", score_five_digit_buurtcodes$Buurtcode) #put three zeros in front of the code in order for it to be eight digits (buurtcode)
@@ -102,7 +96,6 @@ keeps <- c("a27_1","a27_2", "a27_3", "b01", "b02", "b03", "b04", "b05", "b06", "
            "b10", "b11", "b12_1", "b13", "b14_1", "b14_2", "b14_3", "b14_4", "b14_5", "b15", "b16", "b17", "b18", "b19", "b20", "b21", "b22",
            "GENDERID", "weegfac", "Buurtcode", "buurt_code_eight_digits", "wijk_code_six_digits", "gemeente_code_four_digits", "respnr")
 
-# rm(keeps)
 
 score_final <- total[keeps]
 
@@ -145,14 +138,17 @@ names(score_final)[34] <- "wijk_code_six_digits"
 names(score_final)[35] <- "gemeente_code_four_digits"
 names(score_final)[36] <- "respondent_number"
 
+
+score_final$gemeente_code_four_digits <- sprintf(score_final$gemeente_code_four_digits)
 describe(score_final)
+
 
 #SAVE THE PREPARED SCORE DATA IN THREE FORMATS 
 
-save(score_final, file = "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_score_data/score_prepped.RData")
+save(score_final, file = "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/raw_data/processed_score_data/score_prepped.RData")
 
 #ERROR FOR STATA FILE: "Error in write.dta  empty string is not valid in Stata's documented format"
 #write.dta(score_final, "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_score_data/score_prepped.dta")
 
-write.csv(score_final,"C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/processed_score_data/score_prepped.csv")
+write.csv(score_final,"C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/raw_data/processed_score_data/score_prepped.csv")
 

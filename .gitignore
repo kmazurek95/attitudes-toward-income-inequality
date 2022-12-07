@@ -38,7 +38,5 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 
-processed_score_data
-raw_data/
+Data/
 
-processed_score_data/

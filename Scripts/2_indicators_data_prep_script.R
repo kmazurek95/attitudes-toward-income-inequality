@@ -18,14 +18,11 @@ library(foreign)
 library(readxl)
 
 
-#rm(list=ls()) # Clears working environment
-#rm(merged_buurt)
 
-setwd("C:/Users/kaleb/OneDrive/Documents")
-
-indicators_beert_wijk_gemeente <- read_csv("C:/Users/kaleb/OneDrive/Documents/indicators_beert_wijk_gemeente.csv")
+indicators_beert_wijk_gemeente <- read_csv("./Data/indicators_buurt_wijk_gemeente.csv")
 
 indicators_beert_wijk_gemeente <- as.data.frame(`indicators_beert_wijk_gemeente`)
+
 
 #translate the variables into english 
 
@@ -175,4 +172,5 @@ write.csv(indicators_gemeente,"C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-
 
 
 
+describe(indicators_gemeente)
 
