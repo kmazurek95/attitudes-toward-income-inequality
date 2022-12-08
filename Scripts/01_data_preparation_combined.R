@@ -151,6 +151,7 @@ names(score_final)[34] <- "wijk_code_six_digits"
 names(score_final)[35] <- "gemeente_code_four_digits"
 names(score_final)[36] <- "respondent_number"
 
+describe(score_final)
 #----------------------------------------------------------------------------------------------------
 #CONVERT THE CODES THAT THE INDICATORS WILL BE MATCHED ON INTO NUMERIC (IN THE CASES THEY ARE NOT ALREADY)
 
@@ -373,30 +374,32 @@ score_prepped <- as.data.frame(`score_prepped`)
 # MERGE THE SCORE DATA SET WITH EACH LEVEL OF INDICATOR TO CREATE THREE DATA SETS (ONE FOR EACH LEVEL OF INDICATOR)
 
 #MERGE SERVEY DATA AND LEVEL 2 INDICATORS (BUURT)
-merged_score_with__buurt_indicators_only <- merge(x = score_prepped, y = prepped_indicators_buurt, by = "buurt_code_eight_digits")
+merged_score_with__buurt_indicators_only <- merge(x = score_prepped, y = prepped_indicators_buurt, by = "buurt_code_eight_digits") # use ", all=TRUE" to see which ones did not match up 
+merged_score_with__buurt_indicators_only <- subset(merged_score_with__buurt_indicators_only, !is.na(buurt_code_eight_digits)) #DROP ALL ROWS THAT DO NOT HAVE A BUURT CODE AFTER THE MERGE
 
 write.csv(merged_score_with__buurt_indicators_only,"./Data/merged_data/merged_buurt_only.csv")
 
 
 #MERGE SERVEY DATA AND LEVEL 3 INDICATORS (WIJK)
 merged_score_with_wijk_indicators_only <- merge(x = score_prepped, y = prepped_indicators_wijk, by= "wijk_code_six_digits") #merged wijk indicators with original data set 
+merged_score_with_wijk_indicators_only <- subset(merged_score_with_wijk_indicators_only, !is.na(wijk_code_six_digits)) #DROP ALL ROWS THAT DO NOT HAVE A WIJK CODE AFTER THE MERGE
 
 write.csv(merged_score_with_wijk_indicators_only,"./Data/merged_data/merged_wijk_only.csv")
 
 
 #MERGE SERVEY DATA AND LEVEL 4 INDICATORS (GEMEENTE)
 merged_score_with_gemeente_indicators_only <- merge(x = score_prepped, y = prepped_indicators_gemeente, by= "gemeente_code_four_digits") #merged wijk indicators with original data set 
+merged_score_with_gemeente_indicators_only <- subset(merged_score_with_gemeente_indicators_only, !is.na(gemeente_code_four_digits)) #DROP ALL ROWS THAT DO NOT HAVE A GEMEENTE CODE AFTER THE MERGE
+
 
 write.csv(merged_score_with_gemeente_indicators_only,"./Data/merged_data/merged_gemeente_only.csv")
-
 #--------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 #MERGE WIJK INDICATORS (LEVEL 3) WITH SCORE DATA CONTAINING LEVEL 2 INDICATORS (BUURT)
 incomplete_merge <- merge(x = merged_score_with__buurt_indicators_only, y = prepped_indicators_wijk, by= "wijk_code_six_digits") #merge wijk indicators with the previous merge between score and buurt indicators
 
 #MERGE GEMEENTE INDICATORS (LEVEL 4) WITH SCORE DATA CONTAINING LEVEL 2 & 3 INDICATORS (BUURT & WIJK) 
-complete_merge <- merge(x = incomplete_merge, y = prepped_indicators_gemeente, by= "gemeente_code_four_digits", all.x = TRUE) #merge wijk indicators with the previous merge between score and buurt indicators
+complete_merge <- merge(x = incomplete_merge, y = prepped_indicators_gemeente, by= "gemeente_code_four_digits") #merge wijk indicators with the previous merge between score and buurt indicators
 
 write.csv(complete_merge,"./Data/merged_data/complete_merge.csv")
 
@@ -458,9 +461,6 @@ describe(complete_merge)
 drop <- c("...1.y.1","...1.x.1", "...1.y", "...1.x")
 complete_merge = complete_merge[,!(names(complete_merge) %in% drop)]
 
-
-#DROP THE ROWS THAT CONTAIN NAs IN EVERY COLUMN
-complete_merge <- complete_merge[rowSums(is.na(complete_merge)) != ncol(complete_merge), ]
 
 
 
