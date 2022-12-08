@@ -6,10 +6,10 @@ clear
 	set scheme s2mono
 	
 	
-global path "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/raw_data/processed_score_data"
+global path "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/Data"
 
 *import SCORE dataset that has been cleaned
-insheet using "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/raw_data/processed_score_data/score_prepped.csv", comma clear
+insheet using "C:/Users/kaleb/OneDrive/Desktop/attitudes-toward-income-inequality/Data/processed_score_data/score_prepped.csv", comma clear
 
 
 *merge with buurt indicators
