@@ -1,1 +1,0 @@
-# attitudes-toward-income-inequality
