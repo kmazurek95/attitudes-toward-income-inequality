@@ -1,0 +1,53 @@
+# Data files (too large / sensitive)
+*.dta
+*.sav
+*.csv
+data/raw/
+data/processed/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+ENV/
+
+# R
+.Rhistory
+.Rdata
+.RDataTmp
+.Ruserdata
+_targets/
+*.Rproj.user/
+
+# Jupyter
+.ipynb_checkpoints/
+*_executed.ipynb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Outputs (regenerable)
+outputs/figures/*.png
+outputs/tables/*.html
+
+# Keep these folders but ignore contents
+!data/.gitkeep
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!outputs/.gitkeep
+!outputs/figures/.gitkeep
+!outputs/tables/.gitkeep

@@ -1,0 +1,52 @@
+
+    <html>
+    <head>
+        <style>
+            table { border-collapse: collapse; font-family: Arial, sans-serif; }
+            th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid #ddd; }
+            th { background-color: #f5f5f5; font-weight: bold; }
+            td:first-child, th:first-child { text-align: left; }
+            tr:hover { background-color: #f9f9f9; }
+        </style>
+    </head>
+    <body>
+        <h2>Multilevel Regression Results</h2>
+        <p><em>DV: Redistribution Preferences (0-100 scale)</em></p>
+        <table>
+<thead>
+<tr><th>Variable                        </th><th>Empty         </th><th>+ Key Pred      </th><th>+ Ind Controls   </th><th>+ Buurt Controls  </th></tr>
+</thead>
+<tbody>
+<tr><td>Intercept                       </td><td>71.51 (0.42)  </td><td>71.38 (0.41)    </td><td>65.97 (2.99)     </td><td>65.85 (2.99)      </td></tr>
+<tr><td>% Low income HH (buurt)         </td><td>              </td><td>3.355*** (0.423)</td><td>2.904*** (0.410) </td><td>0.327 (0.958)     </td></tr>
+<tr><td>Age (std)                       </td><td>              </td><td>                </td><td>3.071*** (0.571) </td><td>3.034*** (0.572)  </td></tr>
+<tr><td>Education (std)                 </td><td>              </td><td>                </td><td>-2.741*** (0.398)</td><td>-2.699*** (0.399) </td></tr>
+<tr><td>Born in Netherlands             </td><td>              </td><td>                </td><td>-0.003 (0.391)   </td><td>0.022 (0.391)     </td></tr>
+<tr><td>Population density              </td><td>              </td><td>                </td><td>                 </td><td>-0.441 (0.514)    </td></tr>
+<tr><td>% Over 65                       </td><td>              </td><td>                </td><td>                 </td><td>-0.125 (0.522)    </td></tr>
+<tr><td>% Non-Western                   </td><td>              </td><td>                </td><td>                 </td><td>-0.311 (0.595)    </td></tr>
+<tr><td>% Low income HH                 </td><td>              </td><td>                </td><td>                 </td><td>-0.641 (2.033)    </td></tr>
+<tr><td>% Social minimum                </td><td>              </td><td>                </td><td>                 </td><td>3.849 (2.234)     </td></tr>
+<tr><td>occupation: Senior manager      </td><td>              </td><td>                </td><td>-13.420** (4.322)</td><td>-13.524** (4.321) </td></tr>
+<tr><td>sex: Female                     </td><td>              </td><td>                </td><td>4.334*** (0.813) </td><td>4.374*** (0.813)  </td></tr>
+<tr><td>sex: Other                      </td><td>              </td><td>                </td><td>-20.929 (18.519) </td><td>-22.201 (18.515)  </td></tr>
+<tr><td>employment_status: Employed     </td><td>              </td><td>                </td><td>-3.057 (1.685)   </td><td>-2.932 (1.685)    </td></tr>
+<tr><td>employment_status: Unemployed   </td><td>              </td><td>                </td><td>1.757 (2.569)    </td><td>2.035 (2.570)     </td></tr>
+<tr><td>occupation: Modern professional </td><td>              </td><td>                </td><td>3.834** (1.463)  </td><td>3.741* (1.463)    </td></tr>
+<tr><td>employment_status: Other        </td><td>              </td><td>                </td><td>-0.152 (2.670)   </td><td>0.157 (2.670)     </td></tr>
+<tr><td>employment_status: Self-employed</td><td>              </td><td>                </td><td>-7.791* (3.516)  </td><td>-7.615* (3.515)   </td></tr>
+<tr><td>employment_status: Student      </td><td>              </td><td>                </td><td>4.934 (3.091)    </td><td>4.800 (3.089)     </td></tr>
+<tr><td>employment_status: Retired      </td><td>              </td><td>                </td><td>8.308*** (2.029) </td><td>8.183*** (2.028)  </td></tr>
+<tr><td>buurt_id Var                    </td><td>0.035* (0.015)</td><td>0.024 (0.014)   </td><td>0.018 (0.013)    </td><td>0.016 (0.013)     </td></tr>
+<tr><td>employment_status: Homemaker    </td><td>              </td><td>                </td><td>1.771 (1.892)    </td><td>2.002 (1.892)     </td></tr>
+<tr><td>---                             </td><td>---           </td><td>---             </td><td>---              </td><td>---               </td></tr>
+<tr><td>N                               </td><td>4640          </td><td>4640            </td><td>4640             </td><td>4640              </td></tr>
+<tr><td>Groups                          </td><td>1563          </td><td>1563            </td><td>1563             </td><td>1563              </td></tr>
+<tr><td>AIC                             </td><td>nan           </td><td>nan             </td><td>nan              </td><td>nan               </td></tr>
+<tr><td>BIC                             </td><td>nan           </td><td>nan             </td><td>nan              </td><td>nan               </td></tr>
+</tbody>
+</table>
+        <p><small>* p&lt;0.05, ** p&lt;0.01, *** p&lt;0.001. Standard errors in parentheses.</small></p>
+    </body>
+    </html>
+    
