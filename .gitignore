@@ -1,11 +1,33 @@
-# Data files (too large / sensitive)
+# =============================================================================
+# Data files (SENSITIVE - never upload to GitHub)
+# =============================================================================
+# Survey data (contains personal/geographic identifiers)
 *.dta
 *.sav
-*.csv
-data/raw/
-data/processed/
+score*
+*score*
 
+# All data files
+*.csv
+*.xlsx
+*.xls
+*.RData
+*.rds
+*.parquet
+
+# Data directories (at any level)
+data/
+**/data/
+02_data_orig/
+03_data_final/
+processed_*/
+legacy/**/data/
+legacy/**/*.dta
+legacy/**/*.csv
+
+# =============================================================================
 # Python
+# =============================================================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -17,37 +39,55 @@ __pycache__/
 venv/
 ENV/
 
+# =============================================================================
 # R
+# =============================================================================
 .Rhistory
-.Rdata
+.Rapp.history
+.RData
 .RDataTmp
 .Ruserdata
 _targets/
-*.Rproj.user/
+.Rproj.user/
+*-Ex.R
+/*.tar.gz
+/*.Rcheck/
+*_cache/
+/cache/
+*.utf8.md
+*.knit.md
+.Renviron
+.httr-oauth
 
+# =============================================================================
 # Jupyter
+# =============================================================================
 .ipynb_checkpoints/
 *_executed.ipynb
 
-# IDE
+# =============================================================================
+# IDE / Editor
+# =============================================================================
 .idea/
 .vscode/
 *.swp
 *.swo
 
+# =============================================================================
 # OS
+# =============================================================================
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Outputs (regenerable)
-outputs/figures/*.png
-outputs/tables/*.html
+# =============================================================================
+# Output files (regenerable from code)
+# =============================================================================
+outputs/
 
-# Keep these folders but ignore contents
-!data/.gitkeep
-!data/raw/.gitkeep
-!data/processed/.gitkeep
-!outputs/.gitkeep
-!outputs/figures/.gitkeep
-!outputs/tables/.gitkeep
+# =============================================================================
+# Deprecated folders (kept for reference but not tracked)
+# =============================================================================
+redistribution_analysis_python/
+archive/
+Public Attitudes Research.Rproj
