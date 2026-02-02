@@ -111,11 +111,6 @@ tar_target(
   command = analyze_missingness(merged_data)
 ),
 
-tar_target(
-  name = matched_comparison,
-  command = compare_matched_unmatched(merged_data)
-),
-
 # ===========================================================================
 # PHASE 4: TRANSFORM - Recode and standardize
 # ===========================================================================
@@ -127,8 +122,20 @@ tar_target(
 ),
 
 tar_target(
+  name = matched_comparison,
+  command = compare_matched_unmatched(data_recoded)
+),
+
+# NEW: Create inequality indices (matches Python pipeline)
+tar_target(
+  name = data_with_indices,
+  command = create_inequality_indices(data_recoded),
+  format = "rds"
+),
+
+tar_target(
   name = data_final,
-  command = standardize_context_vars(data_recoded),
+  command = standardize_context_vars(data_with_indices),
   format = "rds"
 ),
 
@@ -160,6 +167,20 @@ tar_target(
 tar_target(
   name = sensitivity_results,
   command = run_sensitivity(data_final)
+),
+
+# R-SPECIFIC: True nested random effects models
+# This is a robustness check using lme4's capability for nested random effects
+# which Python's statsmodels cannot replicate
+tar_target(
+  name = models_nested,
+  command = fit_nested_random_effects(data_final)
+),
+
+# H3 Test: Cross-level interaction (individual income moderation)
+tar_target(
+  name = h3_results,
+  command = test_h3_cross_level_interaction(data_final)
 ),
 
 # ===========================================================================

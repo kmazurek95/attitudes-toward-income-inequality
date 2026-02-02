@@ -75,7 +75,17 @@ SURVEY_COLUMNS = {
 
     # Employment
     "b07": "work_status",      # Employment status
-    "b09": "work_type",        # Occupation type
+    "b09": "employee_type",    # Employee, self-employed, family business
+    "b10": "org_type",         # Organization type (public/private sector)
+    "b11": "has_supervisory",  # Has supervisory responsibility
+    "b13": "occupation_class", # NS-SEC occupation classification
+
+    # Asset ownership (income/wealth proxy for H3)
+    "b14_1": "owns_home",      # Owns home (eigen huis)
+    "b14_2": "owns_property",  # Owns other real estate
+    "b14_3": "has_savings",    # Has savings account
+    "b14_4": "owns_stocks",    # Owns stocks/bonds
+    "b14_5": "no_assets",      # None of these
 
     # Migration background
     "b18": "born_in_nl",       # Born in Netherlands (1=Yes, 0=No)

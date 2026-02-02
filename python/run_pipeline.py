@@ -30,7 +30,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from config import (
     SURVEY_PATH, ADMIN_PATH, USE_CBS_API,
     PROCESSED_DATA_PATH, REGRESSION_TABLE_PATH,
-    OUTPUT_DIR
+    OUTPUT_DIR, TABLES_DIR
 )
 
 
@@ -53,7 +53,8 @@ def main(use_cbs_api: bool = False, include_occupation: bool = True):
     from src.extract import load_survey_data, load_admin_data, validate_raw_data
     from src.transform import (
         create_geo_ids, prepare_admin_by_level,
-        recode_survey_variables, standardize_context_vars
+        recode_survey_variables, standardize_context_vars,
+        create_inequality_indices, add_geographic_names_from_admin
     )
     from src.merge import (
         merge_survey_admin, validate_merge,
@@ -62,7 +63,9 @@ def main(use_cbs_api: bool = False, include_occupation: bool = True):
     )
     from src.analyze import (
         fit_two_level_models, calculate_icc,
-        run_diagnostics, run_sensitivity
+        run_diagnostics, run_sensitivity,
+        fit_four_level_models, calculate_four_level_icc,
+        test_h3_cross_level_interaction
     )
     from src.report import create_model_table, generate_report
 
@@ -110,20 +113,44 @@ def main(use_cbs_api: bool = False, include_occupation: bool = True):
     print("=" * 60)
 
     data_recoded = recode_survey_variables(merged_data)
-    data_final = standardize_context_vars(data_recoded)
+    data_with_indices = create_inequality_indices(data_recoded)
+    data_with_names = add_geographic_names_from_admin(data_with_indices, admin_raw)
+    data_final = standardize_context_vars(data_with_names)
     analysis_sample = create_analysis_sample(data_final, include_occupation)
 
     # =========================================================================
-    # PHASE 5: ANALYZE
+    # PHASE 5: ANALYZE (Two-Level Models)
     # =========================================================================
     print("\n" + "=" * 60)
-    print("PHASE 5: ANALYZE")
+    print("PHASE 5a: ANALYZE (Two-Level Buurt Models)")
     print("=" * 60)
 
     models = fit_two_level_models(analysis_sample)
     icc_results = calculate_icc(models)
     diagnostics = run_diagnostics(models, analysis_sample)
     sensitivity = run_sensitivity(data_final)
+
+    # H3 Test: Cross-level interaction (individual income moderation)
+    h3_results = test_h3_cross_level_interaction(data_final)
+
+    # =========================================================================
+    # PHASE 5b: ANALYZE (Four-Level Models)
+    # =========================================================================
+    print("\n" + "=" * 60)
+    print("PHASE 5b: ANALYZE (Four-Level Models: buurt/wijk/gemeente)")
+    print("=" * 60)
+
+    # Four-level models need wijk_id and gemeente_id
+    four_level_models = None
+    four_level_icc = None
+    if all(col in data_final.columns for col in ["wijk_id", "gemeente_id"]):
+        try:
+            four_level_models = fit_four_level_models(data_final)
+            four_level_icc = calculate_four_level_icc(four_level_models)
+        except Exception as e:
+            print(f"  Warning: Four-level models failed: {e}")
+    else:
+        print("  Skipping: wijk_id or gemeente_id not available")
 
     # =========================================================================
     # PHASE 6: REPORT
@@ -137,8 +164,14 @@ def main(use_cbs_api: bool = False, include_occupation: bool = True):
     (OUTPUT_DIR / "tables").mkdir(exist_ok=True)
     (OUTPUT_DIR / "figures").mkdir(exist_ok=True)
 
-    # Generate outputs
+    # Generate two-level model table
     create_model_table(models, REGRESSION_TABLE_PATH)
+
+    # Generate four-level model table if available
+    if four_level_models is not None:
+        from src.report import create_four_level_table
+        four_level_table_path = TABLES_DIR / "regression_table_four_level.html"
+        create_four_level_table(four_level_models, four_level_table_path)
 
     report = generate_report(
         models=models,

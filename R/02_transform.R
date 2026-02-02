@@ -175,6 +175,55 @@ return(data)
 }
 
 
+#' Create Inequality Indices
+#'
+#' Creates composite inequality measures from low40 and high20 percentages.
+#' This matches the Python implementation for pipeline alignment.
+#'
+#' @param data Data with perc_low40_hh and perc_high20_hh columns at each level
+#' @return Data with added inequality indices:
+#'   - income_polarization: sum of low40 + high20 (higher = more at extremes)
+#'   - income_ratio: high20 / low40 (higher = more affluent relative to poor)
+create_inequality_indices <- function(data) {
+
+  message("Creating inequality indices...")
+
+  # Buurt level
+  if (all(c("b_perc_low40_hh", "b_perc_high20_hh") %in% names(data))) {
+    data <- data %>%
+      dplyr::mutate(
+        # Income polarization: Higher when both extremes are large
+        b_income_polarization = b_perc_low40_hh + b_perc_high20_hh,
+        # Income ratio: Higher = more affluent relative to poor
+        b_income_ratio = b_perc_high20_hh / (abs(b_perc_low40_hh) + 0.01)
+      )
+    message("  Created buurt-level inequality indices")
+  }
+
+  # Wijk level
+  if (all(c("w_perc_low40_hh", "w_perc_high20_hh") %in% names(data))) {
+    data <- data %>%
+      dplyr::mutate(
+        w_income_polarization = w_perc_low40_hh + w_perc_high20_hh,
+        w_income_ratio = w_perc_high20_hh / (abs(w_perc_low40_hh) + 0.01)
+      )
+    message("  Created wijk-level inequality indices")
+  }
+
+  # Gemeente level
+  if (all(c("g_perc_low40_hh", "g_perc_high20_hh") %in% names(data))) {
+    data <- data %>%
+      dplyr::mutate(
+        g_income_polarization = g_perc_low40_hh + g_perc_high20_hh,
+        g_income_ratio = g_perc_high20_hh / (abs(g_perc_low40_hh) + 0.01)
+      )
+    message("  Created gemeente-level inequality indices")
+  }
+
+  return(data)
+}
+
+
 #' Standardize Context Variables
 #'
 #' Standardizes (z-scores) the neighborhood-level context variables.
@@ -195,19 +244,25 @@ context_vars <- c(
   "g_avg_inc_recip", "g_perc_low_inc_hh", "g_pop_dens", "g_perc_soc_min_hh"
 )
 
-# Only standardize vars that exist in data
+# Only standardize vars that exist in data AND are numeric
 existing_vars <- intersect(context_vars, names(data))
+numeric_vars <- existing_vars[sapply(data[existing_vars], is.numeric)]
+
+if (length(numeric_vars) < length(existing_vars)) {
+  non_numeric <- setdiff(existing_vars, numeric_vars)
+  warning(glue::glue("Skipping non-numeric variables: {paste(non_numeric, collapse = ', ')}"))
+}
 
 data <- data %>%
   dplyr::mutate(
     dplyr::across(
-      dplyr::all_of(existing_vars),
+      dplyr::all_of(numeric_vars),
       ~ as.vector(scale(.)),
       .names = "{.col}"
     )
   )
 
-message(glue::glue("  Standardized {length(existing_vars)} context variables"))
+message(glue::glue("  Standardized {length(numeric_vars)} context variables"))
 
 return(data)
 }

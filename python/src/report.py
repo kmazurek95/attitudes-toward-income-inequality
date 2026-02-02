@@ -151,6 +151,171 @@ def create_model_table(
     return html
 
 
+def create_four_level_table(
+    models,
+    output_path: Optional[Path] = None
+) -> str:
+    """
+    Create regression table for four-level models.
+
+    Parameters
+    ----------
+    models : FourLevelModels
+        Fitted four-level multilevel models
+    output_path : Path, optional
+        Path to save HTML table
+
+    Returns
+    -------
+    str
+        HTML table string
+    """
+    from tabulate import tabulate
+
+    print("\nCreating four-level regression table...")
+
+    # Extract results from each model
+    model_list = [
+        ("Empty", models.m0_empty),
+        ("+ Key Preds", models.m1_key_pred),
+        ("+ Ind Ctrls", models.m2_ind_controls),
+        ("+ Buurt Ctrls", models.m3_buurt_controls),
+        ("+ Wijk Ctrls", models.m4_wijk_controls)
+    ]
+
+    # Get all parameter names
+    all_params = set()
+    for name, model in model_list:
+        all_params.update(model.params.index)
+
+    all_params.discard("Intercept")
+    all_params.discard("Group Var")
+
+    # Sort parameters - key predictors first
+    param_order = [
+        "b_perc_low40_hh",
+        "w_perc_low40_hh",
+        "g_perc_low40_hh",
+        "age",
+        "education",
+        "born_in_nl",
+        "b_pop_dens",
+        "b_pop_over_65",
+        "b_pop_nonwest",
+        "b_perc_low_inc_hh",
+        "b_perc_soc_min_hh",
+        "w_pop_dens",
+        "w_pop_over_65",
+        "w_pop_nonwest",
+        "w_perc_low_inc_hh",
+        "w_perc_soc_min_hh"
+    ]
+    sorted_params = [p for p in param_order if p in all_params]
+    sorted_params.extend([p for p in all_params if p not in sorted_params])
+
+    # Build table rows
+    rows = []
+
+    # Add intercept first
+    intercept_row = ["Intercept"]
+    for name, model in model_list:
+        if "Intercept" in model.params.index:
+            coef = model.params["Intercept"]
+            se = model.bse["Intercept"]
+            intercept_row.append(f"{coef:.2f} ({se:.2f})")
+        else:
+            intercept_row.append("")
+    rows.append(intercept_row)
+
+    # Add each parameter
+    for param in sorted_params:
+        row = [_clean_param_name_four_level(param)]
+        for name, model in model_list:
+            if param in model.params.index:
+                coef = model.params[param]
+                se = model.bse[param]
+                stars = _get_stars(coef, se)
+                row.append(f"{coef:.3f}{stars} ({se:.3f})")
+            else:
+                row.append("")
+        rows.append(row)
+
+    # Add model statistics
+    rows.append(["---"] * 6)
+    rows.append(["N"] + [str(int(m.nobs)) for _, m in model_list])
+    rows.append(["Groups (buurt)"] + [str(len(m.random_effects)) for _, m in model_list])
+    rows.append(["AIC"] + [f"{m.aic:.1f}" for _, m in model_list])
+    rows.append(["BIC"] + [f"{m.bic:.1f}" for _, m in model_list])
+
+    # Create table
+    headers = ["Variable"] + [name for name, _ in model_list]
+    table_str = tabulate(rows, headers=headers, tablefmt="html")
+
+    # Add styling
+    html = f"""
+    <html>
+    <head>
+        <style>
+            table {{ border-collapse: collapse; font-family: Arial, sans-serif; }}
+            th, td {{ padding: 8px 12px; text-align: right; border-bottom: 1px solid #ddd; }}
+            th {{ background-color: #f5f5f5; font-weight: bold; }}
+            td:first-child, th:first-child {{ text-align: left; }}
+            tr:hover {{ background-color: #f9f9f9; }}
+        </style>
+    </head>
+    <body>
+        <h2>Four-Level Multilevel Regression Results</h2>
+        <p><em>DV: Redistribution Preferences (0-100 scale)</em></p>
+        <p><em>Random intercepts: buurt, wijk, gemeente</em></p>
+        {table_str}
+        <p><small>* p&lt;0.05, ** p&lt;0.01, *** p&lt;0.001. Standard errors in parentheses.</small></p>
+    </body>
+    </html>
+    """
+
+    # Save if path provided
+    if output_path:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            f.write(html)
+        print(f"  Saved to {output_path}")
+
+    return html
+
+
+def _clean_param_name_four_level(param: str) -> str:
+    """Convert parameter names to readable format for four-level models."""
+    name_map = {
+        "b_perc_low40_hh": "% Low income HH (buurt)",
+        "w_perc_low40_hh": "% Low income HH (wijk)",
+        "g_perc_low40_hh": "% Low income HH (gemeente)",
+        "b_pop_dens": "Pop density (buurt)",
+        "b_pop_over_65": "% Over 65 (buurt)",
+        "b_pop_nonwest": "% Non-Western (buurt)",
+        "b_perc_low_inc_hh": "% Low income (buurt)",
+        "b_perc_soc_min_hh": "% Social min (buurt)",
+        "w_pop_dens": "Pop density (wijk)",
+        "w_pop_over_65": "% Over 65 (wijk)",
+        "w_pop_nonwest": "% Non-Western (wijk)",
+        "w_perc_low_inc_hh": "% Low income (wijk)",
+        "w_perc_soc_min_hh": "% Social min (wijk)",
+        "age": "Age (std)",
+        "education": "Education (std)",
+        "born_in_nl": "Born in Netherlands",
+    }
+
+    if param in name_map:
+        return name_map[param]
+
+    # Handle categorical variables
+    if param.startswith("C("):
+        parts = param.replace("C(", "").replace(")", "").replace("[T.", ": ").replace("]", "")
+        return parts
+
+    return param
+
+
 def _clean_param_name(param: str) -> str:
     """Convert parameter names to readable format."""
     name_map = {

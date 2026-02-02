@@ -311,6 +311,45 @@ def recode_survey_variables(data: pd.DataFrame) -> pd.DataFrame:
     if "born_in_nl" in df.columns:
         df["born_in_nl"] = df["born_in_nl"].astype(float)
 
+    # -------------------------------------------------------------------------
+    # Wealth/Income Proxy Variables (for H3 moderation test)
+    # -------------------------------------------------------------------------
+
+    # Create wealth index from asset ownership
+    wealth_vars = ["owns_home", "owns_property", "has_savings", "owns_stocks"]
+    available_wealth_vars = [v for v in wealth_vars if v in df.columns]
+
+    if available_wealth_vars:
+        # Sum of assets owned (0-4 scale)
+        df["wealth_index"] = df[available_wealth_vars].fillna(0).sum(axis=1)
+
+        # Binary: High wealth (2+ assets) vs. low wealth
+        df["high_wealth"] = (df["wealth_index"] >= 2).astype(int)
+
+        print(f"  Wealth index: mean={df['wealth_index'].mean():.2f}, "
+              f"high_wealth={df['high_wealth'].mean()*100:.1f}%")
+
+    # Create occupation class (socioeconomic status proxy)
+    if "occupation_class" in df.columns:
+        # Higher class = professional/managerial occupations (codes 1, 3, 7, 8)
+        higher_class_codes = [1.0, 3.0, 7.0, 8.0]
+        df["professional_class"] = df["occupation_class"].isin(higher_class_codes).astype(int)
+
+        # Detailed class ranking (1=highest, 8=lowest)
+        class_rank_map = {
+            3.0: 1,  # Senior management → highest
+            8.0: 2,  # Traditional professional
+            1.0: 3,  # Modern professional
+            7.0: 4,  # Middle management
+            4.0: 5,  # Technical
+            2.0: 6,  # Clerical
+            5.0: 7,  # Semi-routine
+            6.0: 8   # Routine → lowest
+        }
+        df["occupation_rank"] = df["occupation_class"].map(class_rank_map)
+
+        print(f"  Professional class: {df['professional_class'].mean()*100:.1f}%")
+
     print(f"  Recoding complete. {len(df)} observations")
     return df
 
@@ -353,4 +392,141 @@ def standardize_context_vars(
                     standardized_count += 1
 
     print(f"  Standardized {standardized_count} context variables")
+    return df
+
+
+# =============================================================================
+# Inequality Indices
+# =============================================================================
+
+def create_inequality_indices(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create composite inequality measures from low40 and high20 percentages.
+
+    Creates:
+    - income_polarization: Sum of low40 + high20 (captures both ends)
+    - income_ratio: Ratio of high20 to low40 (affluence relative to poverty)
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Data with perc_low40_hh and perc_high20_hh columns
+
+    Returns
+    -------
+    pd.DataFrame
+        Data with added inequality indices
+    """
+    print("Creating inequality indices...")
+
+    df = data.copy()
+    indices_created = 0
+
+    for prefix in ['b_', 'w_', 'g_']:
+        low40_col = f'{prefix}perc_low40_hh'
+        high20_col = f'{prefix}perc_high20_hh'
+
+        if low40_col in df.columns and high20_col in df.columns:
+            # Income polarization: Higher when both extremes are large
+            pol_col = f'{prefix}income_polarization'
+            df[pol_col] = df[low40_col] + df[high20_col]
+            indices_created += 1
+
+            # Income ratio: Higher = more affluent relative to poor
+            # Add small constant to avoid division by zero
+            ratio_col = f'{prefix}income_ratio'
+            df[ratio_col] = df[high20_col] / (df[low40_col].abs() + 0.01)
+            indices_created += 1
+
+            print(f"  Created {pol_col} and {ratio_col}")
+
+    print(f"  Created {indices_created} inequality indices")
+    return df
+
+
+# =============================================================================
+# Geographic Names
+# =============================================================================
+
+def add_geographic_names_from_admin(
+    data: pd.DataFrame,
+    admin_data: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Add geographic names (buurt_name, wijk_name, gemeente_name) to analysis data.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Analysis data with buurt_id, wijk_id, gemeente_id
+    admin_data : pd.DataFrame
+        Raw CBS admin data with WijkenEnBuurten and gemeente_name columns
+
+    Returns
+    -------
+    pd.DataFrame
+        Data with added name columns
+    """
+    print("\nAdding geographic names...")
+
+    df = data.copy()
+
+    # Check if admin data has required columns
+    if 'region_code' not in admin_data.columns and 'Codering_3' not in admin_data.columns:
+        print("  Warning: Cannot find region code column in admin data")
+        return df
+
+    # Use region_code or create it
+    admin = admin_data.copy()
+    if 'region_code' not in admin.columns:
+        for col in ['Codering_3', 'WijkenEnBuurten']:
+            if col in admin.columns:
+                admin['region_code'] = admin[col].astype(str).str.strip()
+                break
+
+    # Create lookups for each level
+    name_col = 'WijkenEnBuurten' if 'WijkenEnBuurten' in admin.columns else None
+    gemeente_name_col = 'gemeente_name' if 'gemeente_name' in admin.columns else None
+
+    # Buurt names
+    if name_col:
+        buurt_rows = admin[admin['region_code'].str.startswith('BU', na=False)].copy()
+        if len(buurt_rows) > 0:
+            buurt_rows['buurt_id'] = buurt_rows['region_code'].str[2:].str.strip()
+            buurt_rows['buurt_name'] = buurt_rows[name_col].str.strip()
+            buurt_lookup = buurt_rows[['buurt_id', 'buurt_name']].drop_duplicates('buurt_id')
+
+            df['buurt_id'] = df['buurt_id'].astype(str).str.strip()
+            df = df.merge(buurt_lookup, on='buurt_id', how='left')
+            n_matched = df['buurt_name'].notna().sum()
+            print(f"  Buurt names: {n_matched}/{len(df)} matched")
+
+    # Wijk names
+    if name_col:
+        wijk_rows = admin[admin['region_code'].str.startswith('WK', na=False)].copy()
+        if len(wijk_rows) > 0:
+            wijk_rows['wijk_id'] = wijk_rows['region_code'].str[2:].str.strip()
+            wijk_rows['wijk_name'] = wijk_rows[name_col].str.strip()
+            wijk_lookup = wijk_rows[['wijk_id', 'wijk_name']].drop_duplicates('wijk_id')
+
+            df['wijk_id'] = df['wijk_id'].astype(str).str.strip()
+            df = df.merge(wijk_lookup, on='wijk_id', how='left')
+            n_matched = df['wijk_name'].notna().sum()
+            print(f"  Wijk names: {n_matched}/{len(df)} matched")
+
+    # Gemeente names (from buurt rows or gemeente rows)
+    if gemeente_name_col and 'gemeente_name' not in df.columns:
+        # Get from buurt rows (they have gemeente_name)
+        if name_col:
+            buurt_rows = admin[admin['region_code'].str.startswith('BU', na=False)].copy()
+            if len(buurt_rows) > 0 and gemeente_name_col in buurt_rows.columns:
+                buurt_rows['gemeente_id'] = buurt_rows['region_code'].str[2:6].str.strip()
+                buurt_rows['gemeente_name'] = buurt_rows[gemeente_name_col].str.strip()
+                gemeente_lookup = buurt_rows[['gemeente_id', 'gemeente_name']].drop_duplicates('gemeente_id')
+
+                df['gemeente_id'] = df['gemeente_id'].astype(str).str.strip()
+                df = df.merge(gemeente_lookup, on='gemeente_id', how='left')
+                n_matched = df['gemeente_name'].notna().sum()
+                print(f"  Gemeente names: {n_matched}/{len(df)} matched")
+
     return df

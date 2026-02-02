@@ -301,9 +301,184 @@ if (nrow(dutch_data) > 100) {
     )
 }
 
-message("  Sensitivity analyses complete")
+  # Income ratio model (alternative inequality measure)
+  if ("b_income_ratio" %in% names(data)) {
+    message("  Income ratio model...")
+    ratio_data <- data %>%
+      dplyr::select(dplyr::any_of(c(analysis_vars, "b_income_ratio"))) %>%
+      dplyr::filter(!is.na(b_income_ratio)) %>%
+      tidyr::drop_na()
 
-return(results)
+    if (nrow(ratio_data) > 100) {
+      m_ratio <- lme4::lmer(
+        DV_single ~ b_income_ratio + age + sex + education +
+          employment_status + occupation +
+          b_pop_dens + b_pop_over_65 + b_pop_nonwest +
+          b_perc_low_inc_hh + b_perc_soc_min_hh +
+          (1 | buurt_id),
+        data = ratio_data
+      )
+
+      fe <- lme4::fixef(m_ratio)["b_income_ratio"]
+      se <- sqrt(diag(vcov(m_ratio)))["b_income_ratio"]
+
+      results <- results %>%
+        dplyr::add_row(
+          specification = "Income ratio (high/low)",
+          n = nrow(ratio_data),
+          coefficient = fe,
+          se = se,
+          significant = abs(fe) > 1.96 * se
+        )
+    }
+  }
+
+  message("  Sensitivity analyses complete")
+
+  return(results)
+}
+
+
+#' Fit True Nested Random Effects Models (R-Specific)
+#'
+#' Fits models with proper nested random intercepts using lme4.
+#' This is an R-specific robustness analysis that Python cannot replicate
+#' due to statsmodels limitations with crossed/nested random effects.
+#'
+#' Structure: (1|gemeente_id) + (1|wijk_id) + (1|buurt_id)
+#'
+#' @param data Analysis dataset with buurt_id, wijk_id, gemeente_id
+#' @return A list containing:
+#'   - models: List of fitted lmer models (m0-m3)
+#'   - variance_decomposition: Tibble with ICC at each level
+fit_nested_random_effects <- function(data) {
+
+  message("Fitting true nested random effects models (R-specific)...")
+  message("  Structure: (1|gemeente_id) + (1|wijk_id) + (1|buurt_id)")
+
+  # Check required columns
+  required <- c("buurt_id", "wijk_id", "gemeente_id", "DV_single")
+  missing <- setdiff(required, names(data))
+  if (length(missing) > 0) {
+    warning(glue::glue("Missing required columns: {paste(missing, collapse = ', ')}"))
+    return(NULL)
+  }
+
+  # Ensure factors for random effects
+  data <- data %>%
+    dplyr::mutate(
+      buurt_id = as.factor(buurt_id),
+      wijk_id = as.factor(wijk_id),
+      gemeente_id = as.factor(gemeente_id)
+    )
+
+  # Prepare analysis sample
+  analysis_vars <- c(
+    "DV_single", "age", "sex", "education", "employment_status",
+    "occupation", "born_in_nl", "b_perc_low40_hh", "b_pop_dens",
+    "b_pop_over_65", "b_pop_nonwest", "b_perc_low_inc_hh",
+    "b_perc_soc_min_hh", "buurt_id", "wijk_id", "gemeente_id"
+  )
+
+  nested_data <- data %>%
+    dplyr::select(dplyr::any_of(analysis_vars)) %>%
+    tidyr::drop_na()
+
+  message(glue::glue("  Analysis sample: {nrow(nested_data)} observations"))
+
+  # M0: Empty nested model
+  message("  Fitting nested m0 (empty model)...")
+  m0_nested <- lme4::lmer(
+    DV_single ~ 1 + (1 | gemeente_id) + (1 | wijk_id) + (1 | buurt_id),
+    data = nested_data,
+    REML = TRUE,
+    control = lme4::lmerControl(optimizer = "bobyqa")
+  )
+
+  # M1: + Key predictor
+  message("  Fitting nested m1 (+ key predictor)...")
+  m1_nested <- lme4::lmer(
+    DV_single ~ b_perc_low40_hh +
+      (1 | gemeente_id) + (1 | wijk_id) + (1 | buurt_id),
+    data = nested_data,
+    REML = TRUE
+  )
+
+  # M2: + Individual controls
+  message("  Fitting nested m2 (+ individual controls)...")
+  m2_nested <- lme4::lmer(
+    DV_single ~ b_perc_low40_hh + age + sex + education +
+      employment_status + occupation + born_in_nl +
+      (1 | gemeente_id) + (1 | wijk_id) + (1 | buurt_id),
+    data = nested_data,
+    REML = TRUE
+  )
+
+  # M3: + Buurt controls
+  message("  Fitting nested m3 (+ buurt controls)...")
+  m3_nested <- lme4::lmer(
+    DV_single ~ b_perc_low40_hh + age + sex + education +
+      employment_status + occupation + born_in_nl +
+      b_pop_dens + b_pop_over_65 + b_pop_nonwest +
+      b_perc_low_inc_hh + b_perc_soc_min_hh +
+      (1 | gemeente_id) + (1 | wijk_id) + (1 | buurt_id),
+    data = nested_data,
+    REML = TRUE
+  )
+
+  models <- list(
+    m0_nested = m0_nested,
+    m1_nested = m1_nested,
+    m2_nested = m2_nested,
+    m3_nested = m3_nested
+  )
+
+  # Calculate ICC at each level from empty model
+  message("\n  Variance decomposition (from empty model):")
+  vc <- as.data.frame(lme4::VarCorr(m0_nested))
+
+  var_gemeente <- vc$vcov[vc$grp == "gemeente_id"]
+  var_wijk <- vc$vcov[vc$grp == "wijk_id"]
+  var_buurt <- vc$vcov[vc$grp == "buurt_id"]
+  var_resid <- vc$vcov[vc$grp == "Residual"]
+  var_total <- var_gemeente + var_wijk + var_buurt + var_resid
+
+  icc_gemeente <- var_gemeente / var_total
+  icc_wijk <- var_wijk / var_total
+  icc_buurt <- var_buurt / var_total
+  icc_resid <- var_resid / var_total
+
+  message(glue::glue("    Gemeente: {round(100 * icc_gemeente, 2)}%"))
+  message(glue::glue("    Wijk: {round(100 * icc_wijk, 2)}%"))
+  message(glue::glue("    Buurt: {round(100 * icc_buurt, 2)}%"))
+  message(glue::glue("    Residual (individual): {round(100 * icc_resid, 2)}%"))
+
+  variance_decomposition <- tibble::tibble(
+    level = c("Gemeente", "Wijk", "Buurt", "Residual", "Total"),
+    variance = c(var_gemeente, var_wijk, var_buurt, var_resid, var_total),
+    icc = c(icc_gemeente, icc_wijk, icc_buurt, icc_resid, 1.0),
+    pct_variance = c(
+      100 * icc_gemeente,
+      100 * icc_wijk,
+      100 * icc_buurt,
+      100 * icc_resid,
+      100
+    )
+  )
+
+  # Key coefficient from full model
+  fe_m3 <- lme4::fixef(m3_nested)["b_perc_low40_hh"]
+  se_m3 <- sqrt(diag(vcov(m3_nested)))["b_perc_low40_hh"]
+  message(glue::glue("\n  Key predictor (nested m3): {round(fe_m3, 3)} (SE = {round(se_m3, 3)})"))
+
+  return(list(
+    models = models,
+    variance_decomposition = variance_decomposition,
+    n_obs = nrow(nested_data),
+    n_gemeente = length(unique(nested_data$gemeente_id)),
+    n_wijk = length(unique(nested_data$wijk_id)),
+    n_buurt = length(unique(nested_data$buurt_id))
+  ))
 }
 
 
@@ -417,4 +592,163 @@ report <- list(
 message("  Report generated")
 
 return(report)
+}
+
+
+#' Test H3: Cross-Level Interaction (Individual Income Moderation)
+#'
+#' Tests whether individual income (proxied by wealth_index) moderates the
+#' effect of neighborhood poverty concentration on redistribution preferences.
+#'
+#' H3 predicts: The effect of neighborhood inequality is weaker for higher-income
+#' individuals (negative interaction).
+#'
+#' @param data Analysis dataset with wealth_index variable
+#' @return A list with H3 test results
+test_h3_cross_level_interaction <- function(data) {
+
+  message("\n", paste(rep("=", 60), collapse = ""))
+  message("H3 TEST: Cross-Level Interaction (Individual Income Moderation)")
+  message(paste(rep("=", 60), collapse = ""))
+
+  # Check required variables
+  required_vars <- c("DV_single", "b_perc_low40_hh", "wealth_index", "buurt_id",
+                     "age", "sex", "education", "employment_status", "born_in_nl")
+
+  missing_vars <- setdiff(required_vars, names(data))
+  if (length(missing_vars) > 0) {
+    message("  ERROR: Missing required variables: ", paste(missing_vars, collapse = ", "))
+    return(list(error = paste("Missing variables:", paste(missing_vars, collapse = ", "))))
+  }
+
+  # Prepare analysis data
+  buurt_controls <- c("b_pop_dens", "b_pop_over_65", "b_pop_nonwest",
+                      "b_perc_low_inc_hh", "b_perc_soc_min_hh")
+  buurt_controls <- intersect(buurt_controls, names(data))
+
+  all_vars <- c(required_vars, buurt_controls)
+  h3_data <- data %>%
+    dplyr::select(dplyr::all_of(all_vars)) %>%
+    tidyr::drop_na()
+
+  message(glue::glue("\n  Sample size: N = {nrow(h3_data)}"))
+  message(glue::glue("  Wealth index range: {min(h3_data$wealth_index)} - {max(h3_data$wealth_index)}"))
+  message(glue::glue("  Wealth index mean: {round(mean(h3_data$wealth_index), 2)}"))
+
+  results <- list()
+
+  # Model 1: Main effects only (baseline)
+  message("\n  Model 1: Main effects only...")
+  tryCatch({
+    m1 <- lme4::lmer(
+      DV_single ~ b_perc_low40_hh + wealth_index + age + sex + education +
+        employment_status + born_in_nl +
+        b_pop_dens + b_pop_over_65 + b_pop_nonwest +
+        b_perc_low_inc_hh + b_perc_soc_min_hh +
+        (1 | buurt_id),
+      data = h3_data,
+      REML = TRUE
+    )
+
+    fe <- lme4::fixef(m1)
+    se <- sqrt(diag(vcov(m1)))
+
+    results$m1_neighborhood <- list(coef = fe["b_perc_low40_hh"], se = se["b_perc_low40_hh"])
+    results$m1_wealth <- list(coef = fe["wealth_index"], se = se["wealth_index"])
+
+    message(glue::glue("    Neighborhood effect: {round(results$m1_neighborhood$coef, 3)} (SE={round(results$m1_neighborhood$se, 3)})"))
+    message(glue::glue("    Wealth effect: {round(results$m1_wealth$coef, 3)} (SE={round(results$m1_wealth$se, 3)})"))
+  }, error = function(e) {
+    message("    Error: ", e$message)
+    return(list(error = e$message))
+  })
+
+  # Model 2: With cross-level interaction
+  message("\n  Model 2: With cross-level interaction (H3 test)...")
+  tryCatch({
+    m2 <- lme4::lmer(
+      DV_single ~ b_perc_low40_hh * wealth_index + age + sex + education +
+        employment_status + born_in_nl +
+        b_pop_dens + b_pop_over_65 + b_pop_nonwest +
+        b_perc_low_inc_hh + b_perc_soc_min_hh +
+        (1 | buurt_id),
+      data = h3_data,
+      REML = TRUE
+    )
+
+    fe <- lme4::fixef(m2)
+    se <- sqrt(diag(vcov(m2)))
+
+    main_effect <- fe["b_perc_low40_hh"]
+    main_se <- se["b_perc_low40_hh"]
+    interaction <- fe["b_perc_low40_hh:wealth_index"]
+    interaction_se <- se["b_perc_low40_hh:wealth_index"]
+
+    results$main_effect <- list(coef = main_effect, se = main_se)
+    results$interaction_effect <- list(coef = interaction, se = interaction_se)
+
+    # Significance tests
+    main_z <- abs(main_effect / main_se)
+    interaction_z <- abs(interaction / interaction_se)
+    main_sig <- main_z > 1.96
+    interaction_sig <- interaction_z > 1.96
+
+    message(glue::glue("    Main effect (b_perc_low40_hh): {round(main_effect, 3)} (SE={round(main_se, 3)})"))
+    message(glue::glue("      z = {round(main_z, 2)}, p {ifelse(main_sig, '<', '>')} 0.05"))
+    message(glue::glue("    Interaction (neighborhood x wealth): {round(interaction, 3)} (SE={round(interaction_se, 3)})"))
+    message(glue::glue("      z = {round(interaction_z, 2)}, p {ifelse(interaction_sig, '<', '>')} 0.05"))
+
+    # Simple slopes: effect of neighborhood at different wealth levels
+    message("\n  Simple slopes (neighborhood effect at different wealth levels):")
+    wealth_levels <- 0:4
+    simple_slopes <- sapply(wealth_levels, function(w) main_effect + interaction * w)
+    names(simple_slopes) <- paste0("wealth_", wealth_levels)
+
+    for (w in wealth_levels) {
+      message(glue::glue("    Wealth = {w}: neighborhood effect = {round(simple_slopes[w + 1], 3)}"))
+    }
+    results$simple_slopes <- simple_slopes
+
+    # Interpretation
+    message("\n  ", paste(rep("-", 56), collapse = ""))
+    message("  INTERPRETATION:")
+
+    if (interaction_sig) {
+      if (interaction > 0) {
+        interpretation <- paste(
+          "H3 SUPPORTED (opposite direction): The positive interaction suggests",
+          "that the neighborhood poverty effect is STRONGER for higher-income",
+          "individuals. This contradicts the hypothesis that higher income",
+          "buffers against neighborhood effects."
+        )
+      } else {
+        interpretation <- paste(
+          "H3 SUPPORTED: The negative interaction confirms that the neighborhood",
+          "poverty effect is WEAKER for higher-income individuals. Higher income",
+          "appears to buffer against neighborhood context effects on redistribution",
+          "preferences."
+        )
+      }
+    } else {
+      interpretation <- paste(
+        "H3 NOT SUPPORTED: The interaction between neighborhood poverty and",
+        "individual wealth is not statistically significant. The effect of",
+        "neighborhood composition on redistribution preferences does not",
+        "significantly vary by individual income level."
+      )
+    }
+
+    results$interpretation <- interpretation
+    results$h3_supported <- interaction_sig
+    results$n_obs <- nrow(h3_data)
+
+    message(glue::glue("  {interpretation}"))
+    message("  ", paste(rep("-", 56), collapse = ""))
+
+  }, error = function(e) {
+    message("    Error: ", e$message)
+    results$error <- e$message
+  })
+
+  return(results)
 }
