@@ -20,22 +20,42 @@ import sys
 # Add parent directories to path for imports
 DASHBOARD_DIR = Path(__file__).parent.parent
 PYTHON_DIR = DASHBOARD_DIR.parent
+REPO_ROOT = PYTHON_DIR.parent  # Root of the repository
 sys.path.insert(0, str(PYTHON_DIR))
 
 # Precomputed results path (always available)
 PRECOMPUTED_RESULTS_PATH = DASHBOARD_DIR / "data" / "precomputed_results.json"
 
-# Try to import config, but handle case where it's not available
+# Data path - check multiple locations for flexibility
+# Priority: 1) repo root data/, 2) python/data/, 3) config path
+def _find_data_path() -> Path:
+    """Find the analysis data file in various possible locations."""
+    possible_paths = [
+        REPO_ROOT / "data" / "processed" / "analysis_ready.csv",  # Repo root
+        PYTHON_DIR / "data" / "processed" / "analysis_ready.csv",  # Python folder
+        DASHBOARD_DIR / "data" / "analysis_ready.csv",  # Dashboard folder
+    ]
+
+    for path in possible_paths:
+        if path.exists():
+            return path
+
+    # Try config as last resort
+    try:
+        from config import PROCESSED_DATA_PATH
+        return Path(PROCESSED_DATA_PATH)
+    except ImportError:
+        pass
+
+    # Return first option as default (will trigger demo mode if not found)
+    return possible_paths[0]
+
+PROCESSED_DATA_PATH = _find_data_path()
+
+# Output directories (may not exist in cloud deployment)
 try:
-    from config import (
-        PROCESSED_DATA_PATH,
-        FIGURES_DIR,
-        TABLES_DIR,
-        OUTPUT_DIR
-    )
+    from config import FIGURES_DIR, TABLES_DIR, OUTPUT_DIR
 except ImportError:
-    # Fallback paths for cloud deployment
-    PROCESSED_DATA_PATH = PYTHON_DIR / "data" / "processed" / "analysis_ready.csv"
     FIGURES_DIR = PYTHON_DIR / "outputs" / "figures"
     TABLES_DIR = PYTHON_DIR / "outputs" / "tables"
     OUTPUT_DIR = PYTHON_DIR / "outputs"
@@ -54,7 +74,8 @@ def is_demo_mode() -> bool:
     bool
         True if raw data is not available
     """
-    return not Path(PROCESSED_DATA_PATH).exists()
+    # Re-check the path each time in case it wasn't found during import
+    return not PROCESSED_DATA_PATH.exists()
 
 
 def get_demo_mode_message() -> str:

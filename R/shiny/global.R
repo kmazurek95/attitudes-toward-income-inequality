@@ -10,20 +10,32 @@ library(DT)
 library(here)
 
 # =============================================================================
-# Demo Mode Detection
+# Data Loading
 # =============================================================================
 
-# Try to load from processed data
-data_path <- here::here("data", "processed", "analysis_ready.csv")
+# Try multiple possible data paths
+possible_paths <- c(
+  here::here("data", "processed", "analysis_ready.csv"),
+  here::here("..", "data", "processed", "analysis_ready.csv"),
+  here::here("..", "..", "data", "processed", "analysis_ready.csv")
+)
 
-DEMO_MODE <- !file.exists(data_path)
+data_path <- NULL
+for (path in possible_paths) {
+  if (file.exists(path)) {
+    data_path <- path
+    break
+  }
+}
 
-if (!DEMO_MODE) {
+if (!is.null(data_path)) {
   analysis_data <- readr::read_csv(data_path, show_col_types = FALSE)
   message(paste("Loaded analysis data:", nrow(analysis_data), "rows"))
+  DEMO_MODE <- FALSE
 } else {
   analysis_data <- NULL
-  message("Running in DEMO MODE - using precomputed results only")
+  message("Data file not found - using precomputed results")
+  DEMO_MODE <- TRUE
 }
 
 # =============================================================================
