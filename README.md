@@ -156,8 +156,8 @@ Both dashboards present the same core findings with cross-links:
 
 ### Live Demos
 
-- **Python (Streamlit)**: [attitudes-inequality.streamlit.app](https://attitudes-inequality.streamlit.app)
-- **R (Shiny)**: [kmazurek.shinyapps.io/attitudes-inequality-r](https://kmazurek.shinyapps.io/attitudes-inequality-r)
+- **Python (Streamlit)**: [attitudes-toward-income-inequality.streamlit.app](https://attitudes-toward-income-inequality-7unora4rhffxtelwombehc.streamlit.app)
+- **R (Shiny)**: [kmazurek-analytics.shinyapps.io/income-inequality-attitudes](https://kmazurek-analytics.shinyapps.io/income-inequality-attitudes/)
 
 > **Note**: The processed analysis data (`data/processed/analysis_ready.csv`) is temporarily included in the repository for dashboard functionality. This will be migrated to cloud storage in a future update.
 

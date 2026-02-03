@@ -401,7 +401,7 @@ statsmodels cannot do.
 Results confirm that variance is minimal at all geographic levels (~1-2% each),
 providing additional evidence that neighborhood effects are weak in the Dutch context.
 
-[Open R Dashboard](http://localhost:3838)
+[Open R Dashboard](https://kmazurek-analytics.shinyapps.io/income-inequality-attitudes/)
 """)
 
 # =============================================================================

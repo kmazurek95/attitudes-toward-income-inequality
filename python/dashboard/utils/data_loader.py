@@ -23,17 +23,39 @@ PYTHON_DIR = DASHBOARD_DIR.parent
 REPO_ROOT = PYTHON_DIR.parent  # Root of the repository
 sys.path.insert(0, str(PYTHON_DIR))
 
-# Precomputed results path (always available)
-PRECOMPUTED_RESULTS_PATH = DASHBOARD_DIR / "data" / "precomputed_results.json"
+# Precomputed results path (always available) - check multiple locations
+def _find_precomputed_path() -> Path:
+    """Find the precomputed results JSON file."""
+    cwd = Path.cwd()
+    possible_paths = [
+        DASHBOARD_DIR / "data" / "precomputed_results.json",
+        cwd / "python" / "dashboard" / "data" / "precomputed_results.json",
+        cwd / "dashboard" / "data" / "precomputed_results.json",
+    ]
+    for path in possible_paths:
+        if path.exists():
+            return path
+    return possible_paths[0]
+
+PRECOMPUTED_RESULTS_PATH = _find_precomputed_path()
 
 # Data path - check multiple locations for flexibility
 # Priority: 1) repo root data/, 2) python/data/, 3) config path
 def _find_data_path() -> Path:
     """Find the analysis data file in various possible locations."""
+    # Get current working directory (works better on Streamlit Cloud)
+    cwd = Path.cwd()
+
     possible_paths = [
+        # From current working directory (Streamlit Cloud typically runs from repo root)
+        cwd / "data" / "processed" / "analysis_ready.csv",
+        # From __file__ relative paths
         REPO_ROOT / "data" / "processed" / "analysis_ready.csv",  # Repo root
         PYTHON_DIR / "data" / "processed" / "analysis_ready.csv",  # Python folder
         DASHBOARD_DIR / "data" / "analysis_ready.csv",  # Dashboard folder
+        # Try going up from cwd
+        cwd.parent / "data" / "processed" / "analysis_ready.csv",
+        cwd.parent.parent / "data" / "processed" / "analysis_ready.csv",
     ]
 
     for path in possible_paths:

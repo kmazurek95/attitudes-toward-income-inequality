@@ -59,6 +59,8 @@ ui <- dashboardPage(
       hr(),
       p(
         style = "font-style: italic;",
+        strong("Author: Kaleb Mazurek"),
+        br(),
         "University of Amsterdam",
         br(),
         "Supervised by Dr. Wouter Schakel"

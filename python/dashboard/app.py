@@ -136,7 +136,7 @@ with st.sidebar:
     `(1|gemeente) + (1|wijk) + (1|buurt)`
     """)
 
-    r_dashboard_url = "http://localhost:3838"
+    r_dashboard_url = "https://kmazurek-analytics.shinyapps.io/income-inequality-attitudes/"
     st.link_button(
         "Open R Dashboard",
         r_dashboard_url,
